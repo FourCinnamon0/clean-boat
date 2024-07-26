@@ -1,0 +1,125 @@
+import RPi.GPIO as GPIO
+import time
+
+# Define GPIO for the motors
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(11, GPIO.OUT)  # left motor
+GPIO.setup(13, GPIO.OUT)  # right motor
+
+# Define GPIO for ultrasonic sensor
+GPIO_TRIGGER = 16
+GPIO_ECHO = 18
+GPIO.setup(GPIO_TRIGGER, GPIO.OUT)
+GPIO.setup(GPIO_ECHO, GPIO.IN)
+
+# Define GPIO pins for stepper motor
+STEP_PIN = 29
+DIR_PIN = 31
+GPIO.setup(STEP_PIN, GPIO.OUT)
+GPIO.setup(DIR_PIN, GPIO.OUT)
+
+# Functions for driving
+def goforward():
+    GPIO.output(11, True)
+    GPIO.output(13, True)
+
+def turnleft():
+    GPIO.output(11, False)
+    GPIO.output(13, True)
+    time.sleep(0.8)
+    GPIO.output(13, False)
+
+def turnright():
+    GPIO.output(13, False)
+    GPIO.output(11, True)
+    time.sleep(0.8)
+    GPIO.output(11, False)
+
+def gobackward():
+    # Assuming the motors are connected in a way that inverting signals will make them move backward
+    GPIO.output(11, True)
+    GPIO.output(13, True)
+
+def stopmotors():
+    GPIO.output(11, False)
+    GPIO.output(13, False)
+
+# Rotate stepper motor (possible error on speed)
+def rotate_stepper(steps, direction):
+    GPIO.output(DIR_PIN, True)
+    for _ in range(2048):
+        GPIO.output(STEP_PIN, True)
+        time.sleep(0.001)
+        GPIO.output(STEP_PIN, False)
+        time.sleep(0.001)
+
+# Detect obstacles
+def detect_obstacle():
+    GPIO.output(GPIO_TRIGGER, False)
+    time.sleep(0.2)
+    GPIO.output(GPIO_TRIGGER, True)
+    time.sleep(0.00001)
+    GPIO.output(GPIO_TRIGGER, False)
+    start = time.time()
+    while GPIO.input(GPIO_ECHO) == 0:
+        start = time.time()
+    while GPIO.input(GPIO_ECHO) == 1:
+        stop = time.time()
+    elapsed = stop - start
+    distance = elapsed * 34300 / 2
+    print("Distance : %.1f" % distance)
+    return distance
+
+# Scan for obstacles using the stepper motor
+# Scan for Obstacles
+def scan_for_obstacles():
+    steps_per_angle = 2048 // 180
+    scan_results = []
+    for angle in range(0, 181, 30):
+        rotate_stepper(steps_per_angle * 30, True)
+        distance = detect_obstacle()
+        scan_results.append((angle, distance))
+    rotate_stepper(steps_per_angle * 180, False)  # Return to original position
+    return scan_results
+
+
+# Determine best direction to move based on scan results
+def choose_direction(scan_results):
+    max_distance = max(scan_results, key=lambda x: x[1])
+    return max_distance[0]
+
+# Avoid obstacles and drive forward
+def obstacle_avoid_drive():
+    goforward()
+    start = time.time()
+    while time.time() - start < 300:  #Runs for 5 minutes
+        scan_results = scan_for_obstacles()
+        best_direction = choose_direction(scan_results)
+        if best_direction < 90:  # Turn left
+            stopmotors()
+            turnleft()
+        elif best_direction > 90:  # Turn right
+            stopmotors()
+            turnright()
+        else:  # Move forward if the best direction is straight ahead
+            goforward()
+    cleargpios()
+
+def cleargpios():
+    print("clearing GPIO")
+    GPIO.output(11, False)
+    GPIO.output(13, False)
+    GPIO.output(GPIO_TRIGGER, False)
+    GPIO.cleanup()
+    print("All GPIOs CLEARED")
+
+def main():
+    try:
+        cleargpios()
+        print("Start driving: ")
+        obstacle_avoid_drive()
+    except KeyboardInterrupt:
+        cleargpios()
+
+if __name__ == "__main__":
+    main()

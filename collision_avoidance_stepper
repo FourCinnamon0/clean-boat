@@ -18,7 +18,7 @@ DIR_PIN = 31
 GPIO.setup(STEP_PIN, GPIO.OUT)
 GPIO.setup(DIR_PIN, GPIO.OUT)
 
-# Functions for driving
+# Driving functions
 def goforward():
     GPIO.output(11, True)
     GPIO.output(13, True)
@@ -44,7 +44,7 @@ def stopmotors():
     GPIO.output(11, False)
     GPIO.output(13, False)
 
-# Rotate stepper motor (possible error on speed)
+# Rotate stepper motor (possible error on max possible speed)
 def rotate_stepper(steps, direction):
     GPIO.output(DIR_PIN, True)
     for _ in range(2048):
@@ -53,7 +53,7 @@ def rotate_stepper(steps, direction):
         GPIO.output(STEP_PIN, False)
         time.sleep(0.001)
 
-# Detect obstacles
+# Obstacle Detection
 def detect_obstacle():
     GPIO.output(GPIO_TRIGGER, False)
     time.sleep(0.2)
@@ -70,7 +70,6 @@ def detect_obstacle():
     print("Distance : %.1f" % distance)
     return distance
 
-# Scan for obstacles using the stepper motor
 # Scan for Obstacles
 def scan_for_obstacles():
     steps_per_angle = 2048 // 180
@@ -83,22 +82,22 @@ def scan_for_obstacles():
     return scan_results
 
 
-# Determine best direction to move based on scan results
+# Choosing direction
 def choose_direction(scan_results):
     max_distance = max(scan_results, key=lambda x: x[1])
     return max_distance[0]
 
-# Avoid obstacles and drive forward
+# Driving in that direction
 def obstacle_avoid_drive():
     goforward()
     start = time.time()
     while time.time() - start < 300:  #Runs for 5 minutes
         scan_results = scan_for_obstacles()
         best_direction = choose_direction(scan_results)
-        if best_direction < 90:  # Turn left
+        if best_direction < 90: 
             stopmotors()
             turnleft()
-        elif best_direction > 90:  # Turn right
+        elif best_direction > 90:
             stopmotors()
             turnright()
         else:  # Move forward if the best direction is straight ahead

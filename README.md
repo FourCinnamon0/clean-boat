@@ -1,3 +1,1 @@
-GPIOs are random
-sleep times random
-driver board for reversing
+GPIOs, sleep times random, driver board for reversing

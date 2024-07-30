@@ -1,0 +1,47 @@
+import math
+import time
+import gpsd
+
+gpsd.connect()
+
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371000  # Radius of Earth in meters
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+    a = math.sin(delta_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
+def get_current_location():
+    packet = gpsd.get_current()
+    return packet.lat, packet.lon
+
+def calculate_bearing(lat1, lon1, lat2, lon2):
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_lambda = math.radians(lon2 - lon1)
+    y = math.sin(delta_lambda) * math.cos(phi2)
+    x = math.cos(phi1) * math.sin(phi2) - math.sin(phi1) * math.cos(phi2) * math.cos(delta_lambda)
+    bearing = math.atan2(y, x)
+    return math.degrees(bearing)
+
+
+#sample waypoints =
+waypoints = [
+    (52.2296756, 21.0122287),
+    (41.8919300, 12.5113300)
+]
+
+for waypoint in waypoints:
+    while True:
+        current_lat, current_lon = get_current_location()
+        distance = haversine(current_lat, current_lon, waypoint[0], waypoint[1])
+
+
+        bearing = calculate_bearing(current_lat, current_lon, waypoint[0], waypoint[1])
+        current_bearing = GET_FROM_THING
+        steering_angle = bearing - current_bearing
+        set_steering(steering_angle)
+        time.sleep(1)

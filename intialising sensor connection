@@ -1,0 +1,22 @@
+import serial
+import time
+import RPi.GPIO as GPIO
+
+import serial
+
+SERIAL_PORT = '/dev/ttyAMA0'  # Update if needed
+BAUDRATE = 9600
+DISTANCE_THRESHOLD = 30
+
+def init_sensor():
+    try:
+        ser = serial.Serial(SERIAL_PORT, BAUDRATE, timeout=1.0)
+        if ser.isOpen():
+            print("Serial port opened successfully")
+            return ser
+        else:
+            print("Error: Serial port is not open")
+            return None
+    except serial.SerialException as e:
+        print(f"Error: {e}")
+        return None

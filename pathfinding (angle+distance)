@@ -13,6 +13,8 @@ def haversine(lat1, lon1, lat2, lon2):
     a = math.sin(delta_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2) ** 2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
+#distance
+
 
 def get_current_location():
     packet = gpsd.get_current()
